@@ -10,17 +10,17 @@ export interface SysDictVO {
 }
 
 export function getDictPage(params: { pageNum: number; pageSize: number }) {
-  return get<PageResult<SysDictVO>>('/admin/v1/dict/page', params)
+  return get<PageResult<SysDictVO>>('/admin/v1/dict/type/page', params)
 }
 
 export function createDict(data: unknown) {
-  return post<void>('/admin/v1/dict', data)
+  return post<void>('/admin/v1/dict/type', data)
 }
 
 export function updateDict(data: unknown) {
-  return put<void>('/admin/v1/dict', data)
+  return put<void>('/admin/v1/dict/type', data)
 }
 
 export function deleteDict(dictId: number) {
-  return del<void>(`/admin/v1/dict/${dictId}`)
+  return del<void>(`/admin/v1/dict/type/${dictId}`)
 }

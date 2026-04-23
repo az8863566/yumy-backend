@@ -11,9 +11,9 @@ export interface SysLogVO {
 }
 
 export function getLogPage(params: { pageNum: number; pageSize: number }) {
-  return get<PageResult<SysLogVO>>('/admin/v1/log/page', params)
+  return get<PageResult<SysLogVO>>('/admin/v1/oper-log/page', params)
 }
 
 export function deleteLog(logId: number) {
-  return del<void>(`/admin/v1/log/${logId}`)
+  return del<void>(`/admin/v1/oper-log/${logId}`)
 }
