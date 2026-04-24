@@ -12,7 +12,6 @@ import {
   updateSubCategory,
   deleteSubCategory,
 } from '@/api/toc/category'
-import { uploadFile } from '@/api/common'
 import type { TocCategoryTreeVO, TocSubCategoryItemVO } from '@/types'
 
 export default function TocCategoryPage() {
