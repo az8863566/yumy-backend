@@ -28,7 +28,7 @@ export default function TocUserPage() {
   })
 
   const statusMut = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: TocUserStatusDTO }) =>
+    mutationFn: ({ userId, data }: { userId: string; data: TocUserStatusDTO }) =>
       updateTocUserStatus(userId, data),
   })
 
@@ -36,13 +36,13 @@ export default function TocUserPage() {
     queryClient.invalidateQueries({ queryKey: ['toc-user', 'page'] })
   }
 
-  const handleViewDetail = useCallback(async (userId: number) => {
+  const handleViewDetail = useCallback(async (userId: string) => {
     const detail = await getTocUserDetail(userId)
     setDetailRecord(detail)
     setDetailOpen(true)
   }, [])
 
-  const handleToggleStatus = useCallback((userId: number, currentStatus: number) => {
+  const handleToggleStatus = useCallback((userId: string, currentStatus: number) => {
     const newStatus = currentStatus === 1 ? 0 : 1
     const action = newStatus === 0 ? '禁用' : '启用'
     modal.confirm({

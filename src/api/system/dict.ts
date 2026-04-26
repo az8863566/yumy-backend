@@ -1,26 +1,24 @@
 import { get, post, put, del } from '../request'
-import type { PageResult } from '@/types'
+import type { PageResult, SysDictTypeVO, SysDictTypeQueryDTO, SysDictTypeCreateDTO, SysDictTypeUpdateDTO } from '@/types'
 
-export interface SysDictVO {
-  dictId: number
-  name: string
-  code: string
-  items: string
-  createTime?: string
+export type { SysDictTypeVO }
+
+export function getDictTypePage(params: SysDictTypeQueryDTO) {
+  return get<PageResult<SysDictTypeVO>>('/admin/v1/dict/type/page', params)
 }
 
-export function getDictPage(params: { pageNum: number; pageSize: number }) {
-  return get<PageResult<SysDictVO>>('/admin/v1/dict/type/page', params)
+export function getDictTypeDetail(dictId: string) {
+  return get<SysDictTypeVO>(`/admin/v1/dict/type/${dictId}`)
 }
 
-export function createDict(data: unknown) {
+export function createDictType(data: SysDictTypeCreateDTO) {
   return post<void>('/admin/v1/dict/type', data)
 }
 
-export function updateDict(data: unknown) {
+export function updateDictType(data: SysDictTypeUpdateDTO) {
   return put<void>('/admin/v1/dict/type', data)
 }
 
-export function deleteDict(dictId: number) {
+export function deleteDictType(dictId: string) {
   return del<void>(`/admin/v1/dict/type/${dictId}`)
 }

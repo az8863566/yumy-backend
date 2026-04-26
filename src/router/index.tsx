@@ -6,7 +6,8 @@ import SystemUserPage from '@/views/system/user'
 import SystemRolePage from '@/views/system/role'
 import SystemMenuPage from '@/views/system/menu'
 import SystemLogPage from '@/views/system/log'
-import SystemDictPage from '@/views/system/dict'
+import SystemDictTypePage from '@/views/system/dict'
+import SystemDictDataPage from '@/views/system/dict-data'
 import SystemConfigPage from '@/views/system/config'
 import TocCategoryPage from '@/views/toc/category'
 import TocRecipePage from '@/views/toc/recipe'
@@ -32,7 +33,8 @@ export const router = createBrowserRouter([
       { path: 'system/role', element: <SystemRolePage /> },
       { path: 'system/menu', element: <SystemMenuPage /> },
       { path: 'system/log', element: <SystemLogPage /> },
-      { path: 'system/dict', element: <SystemDictPage /> },
+      { path: 'system/dict', element: <SystemDictTypePage /> },
+      { path: 'system/dict-data', element: <SystemDictDataPage /> },
       { path: 'system/config', element: <SystemConfigPage /> },
       { path: 'toc/category', element: <TocCategoryPage /> },
       { path: 'toc/recipe', element: <TocRecipePage /> },

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { Layout, Menu, Avatar } from 'antd'
+import { Layout, Menu, Avatar, Spin } from 'antd'
 import {
   Settings,
   Users,
@@ -15,9 +15,11 @@ import {
   Image,
   LogOut,
 } from 'lucide-react'
-import { menuConfig } from '@/config/menu'
+import { useQuery } from '@tanstack/react-query'
+import { getUserMenuTree } from '@/api/system/menu'
 import { useUserStore } from '@/store/useUserStore'
 import { logout as apiLogout } from '@/api/auth'
+import { transformMenuData } from '@/config/menu'
 import type { MenuConfig } from '@/config/menu'
 
 const { Sider } = Layout
@@ -88,6 +90,16 @@ export default function Sidebar() {
   const { userInfo, logout } = useUserStore()
   const [collapsed, setCollapsed] = useState(false)
 
+  const { data: menuTree, isLoading } = useQuery({
+    queryKey: ['sys-menu', 'user-tree'],
+    queryFn: getUserMenuTree,
+  })
+
+  const menuData = useMemo(() => {
+    if (!menuTree) return []
+    return transformMenuData(menuTree)
+  }, [menuTree])
+
   const handleLogout = async () => {
     try {
       await apiLogout()
@@ -97,21 +109,23 @@ export default function Sidebar() {
   }
 
   const selectedKey = useMemo(() => {
-    const allKeys = getAllKeys(menuConfig)
+    if (menuData.length === 0) return ''
+    const allKeys = getAllKeys(menuData)
     const matched = allKeys.find((key) => {
-      const config = findMenuConfig(menuConfig, key)
+      const config = findMenuConfig(menuData, key)
       return config?.path === location.pathname
     })
     return matched || ''
-  }, [location.pathname])
+  }, [location.pathname, menuData])
 
   const openKeys = useMemo(() => {
-    const parentKey = findParentKey(menuConfig, selectedKey)
+    if (menuData.length === 0) return []
+    const parentKey = findParentKey(menuData, selectedKey)
     return parentKey ? [parentKey] : []
-  }, [selectedKey])
+  }, [selectedKey, menuData])
 
   const handleClick = ({ key }: { key: string }) => {
-    const config = findMenuConfig(menuConfig, key)
+    const config = findMenuConfig(menuData, key)
     if (config?.path) {
       navigate(config.path)
     }
@@ -135,16 +149,22 @@ export default function Sidebar() {
         {!collapsed && <span>后羿管理系统</span>}
       </div>
 
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={[selectedKey]}
-        defaultOpenKeys={openKeys}
-        items={renderMenuItems(menuConfig) as unknown as []}
-        onClick={handleClick}
-        className="!bg-transparent !border-0"
-        style={{ background: 'transparent' }}
-      />
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Spin />
+        </div>
+      ) : (
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          defaultOpenKeys={openKeys}
+          items={renderMenuItems(menuData) as unknown as []}
+          onClick={handleClick}
+          className="!bg-transparent !border-0"
+          style={{ background: 'transparent' }}
+        />
+      )}
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
         <div className="flex items-center text-white/80">

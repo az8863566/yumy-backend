@@ -7,11 +7,11 @@ const { Content } = Layout
 
 export default function AppLayout() {
   return (
-    <Layout className="min-h-screen">
+    <Layout className="h-screen">
       <Sidebar />
-      <Layout>
+      <Layout className="flex-1">
         <Header />
-        <Content className="m-0 bg-[#f0f2f5] overflow-auto">
+        <Content className="m-0 bg-[#f0f2f5] overflow-auto flex-1">
           <Outlet />
         </Content>
       </Layout>

@@ -68,6 +68,7 @@ src/
 ### 3.4 API 与数据层
 
 - 所有 API 调用**必须**通过 `api/request.ts` 封装层或 `api/**/*.ts` 中定义的函数，**禁止**页面内直接 `import axios`（否则 401 跳转、错误提示、Cookie 携带全部失效）。
+- 后端统一响应格式：`{ code: 0, msg: "success", data: ... }`，`code: 0` 表示成功，非零表示失败（`msg` 为错误信息）。响应拦截器通过 `data.code !== 0` 判断失败。
 - 查询用 `useQuery`；增删改用 `useMutation`，成功后 `invalidateQueries` 刷新列表。
 - **禁止** `MOCK_XXX` 硬编码数据，必须对接真实 API。
 
@@ -77,7 +78,7 @@ src/
 
 ### 3.6 权限与错误处理
 
-- 认证模式：**Session + Cookie**（非 JWT Token）。
+- 认证模式：**Token**（JWT）。
 - 路由级：后端权限列表动态过滤路由渲染树。
 - 按钮级：`<Access permission="system:user:add">` 或 `useAccess()` 控制显隐。
 - 全局拦截：401（Session 过期→跳登录页）、403（无权限）、500（Message 报错）。

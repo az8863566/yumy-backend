@@ -20,8 +20,8 @@ export default function TocCategoryPage() {
   const [parentModalOpen, setParentModalOpen] = useState(false)
   const [subModalOpen, setSubModalOpen] = useState(false)
   type CategoryEditingRecord =
-    | { level: 'parent'; categoryId?: number; name: string; sortOrder: number }
-    | { level: 'child'; categoryId?: number; parentId: number; name: string; image: string; sortOrder: number }
+    | { level: 'parent'; categoryId?: string; name: string; sortOrder: number }
+    | { level: 'child'; categoryId?: string; parentId: string; name: string; image: string; sortOrder: number }
 
   const [editingRecord, setEditingRecord] = useState<CategoryEditingRecord | null>(null)
   const [parentForm] = Form.useForm()
@@ -49,7 +49,7 @@ export default function TocCategoryPage() {
   const handleParentSubmit = async () => {
     const values = await parentForm.validateFields()
     if (editingRecord?.categoryId) {
-      await updateParentMut.mutateAsync({ categoryId: editingRecord.categoryId as number, ...values })
+      await updateParentMut.mutateAsync({ categoryId: editingRecord.categoryId as string, ...values })
       message.success('修改成功')
     } else {
       await createParentMut.mutateAsync(values)
@@ -64,7 +64,7 @@ export default function TocCategoryPage() {
   const handleSubSubmit = async () => {
     const values = await subForm.validateFields()
     if (editingRecord?.categoryId) {
-      await updateSubMut.mutateAsync({ categoryId: editingRecord.categoryId as number, ...values })
+      await updateSubMut.mutateAsync({ categoryId: editingRecord.categoryId as string, ...values })
       message.success('修改成功')
     } else {
       await createSubMut.mutateAsync(values)
@@ -75,7 +75,7 @@ export default function TocCategoryPage() {
     refreshList()
   }
 
-  const handleDelete = useCallback((type: 'parent' | 'sub', id: number) => {
+  const handleDelete = useCallback((type: 'parent' | 'sub', id: string) => {
     modal.confirm({
       title: '确认删除',
       content: type === 'parent' ? '删除父分类将同时删除其所有子分类，确认继续？' : '确认删除该子分类？',
@@ -97,8 +97,8 @@ export default function TocCategoryPage() {
     name: string
     level: 'parent' | 'child'
     sortOrder: number
-    categoryId: number
-    parentId?: number
+    categoryId: string
+    parentId?: string
     image?: string
     createTime?: string
   }

@@ -50,7 +50,7 @@ export default function TocRecipePage() {
   const updateMut = useMutation({ mutationFn: updateRecipe })
   const deleteMut = useMutation({ mutationFn: deleteRecipe })
   const recommendMut = useMutation({
-    mutationFn: ({ recipeId, data }: { recipeId: number; data: TocRecipeRecommendDTO }) =>
+    mutationFn: ({ recipeId, data }: { recipeId: string; data: TocRecipeRecommendDTO }) =>
       setRecipeRecommend(recipeId, data),
   })
 
@@ -72,7 +72,7 @@ export default function TocRecipePage() {
     refreshList()
   }
 
-  const handleDelete = useCallback((recipeId: number) => {
+  const handleDelete = useCallback((recipeId: string) => {
     modal.confirm({
       title: '确认删除',
       content: '确认删除该菜谱？此操作不可恢复。',
@@ -84,7 +84,7 @@ export default function TocRecipePage() {
     })
   }, [modal, deleteMut, message, refreshList])
 
-  const handleRecommend = useCallback(async (recipeId: number, recommended: boolean) => {
+  const handleRecommend = useCallback(async (recipeId: string, recommended: boolean) => {
     await recommendMut.mutateAsync({ recipeId, data: { recommendSort: recommended ? 1 : 0 } })
     message.success(recommended ? '已设为推荐' : '已取消推荐')
     refreshList()

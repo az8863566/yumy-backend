@@ -1,12 +1,12 @@
 import axios, { AxiosError, AxiosInstance } from 'axios'
 import { message } from 'antd'
+import { useUserStore } from '@/store/useUserStore'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 const request: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,7 +14,10 @@ const request: AxiosInstance = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    // Session 模式：浏览器自动携带 Cookie，无需手动设置 Token
+    const token = useUserStore.getState().token
+    if (token) {
+      config.headers.set('Authorization', `Bearer ${token}`)
+    }
     return config
   },
   (error: AxiosError) => {
@@ -24,20 +27,36 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => {
-    const { data } = response
-    if (data.code !== 200) {
-      message.error(data.msg || '请求失败')
+    const { data, config } = response
+    if (data.code !== 0) {
+      const isLoginRequest = config.url?.includes('/auth/login')
+      const isLoginPage = window.location.pathname === '/login'
+      if (!(isLoginRequest && isLoginPage)) {
+        message.error(data.msg || '请求失败')
+      }
       return Promise.reject(new Error(data.msg))
     }
     return data.data as never
   },
   (error: AxiosError) => {
     const status = error.response?.status
+    const isLoginRequest = error.config?.url?.includes('/auth/login')
+    const isLoginPage = window.location.pathname === '/login'
+    const skipGlobalError = isLoginRequest && isLoginPage
     switch (status) {
-      case 401:
-        message.error('登录已过期，请重新登录')
-        window.location.href = '/login'
+      case 401: {
+        useUserStore.getState().logout()
+        if (isLoginPage) {
+          if (!skipGlobalError) {
+            const data = error.response?.data as { msg?: string } | undefined
+            message.error(data?.msg || '用户名或密码错误')
+          }
+        } else {
+          message.error('登录已过期，请重新登录')
+          window.location.href = '/login'
+        }
         break
+      }
       case 403:
         message.error('无权限访问')
         break

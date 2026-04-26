@@ -23,15 +23,103 @@ export interface AuthLoginDTO {
 }
 
 export interface AuthLoginVO {
+  token: string
   username: string
   nickname: string
   permissions: string[]
 }
 
+/* ========== 系统角色 ========== */
+
+export interface SysRoleVO {
+  roleId: string
+  roleName: string
+  roleCode: string
+  status: number
+  createTime?: string
+  remark?: string
+}
+
+export interface SysRoleQueryDTO {
+  roleName?: string
+  roleCode?: string
+  status?: number
+  pageNum: number
+  pageSize: number
+}
+
+export interface SysRoleCreateDTO {
+  roleName: string
+  roleCode: string
+  status?: number
+  remark?: string
+}
+
+export interface SysRoleUpdateDTO {
+  roleId: string
+  roleName: string
+  roleCode: string
+  status?: number
+  remark?: string
+}
+
+/* ========== 系统菜单 ========== */
+
+export interface SysMenuVO {
+  menuId: string
+  parentId?: string
+  menuName: string
+  menuType: number
+  path?: string
+  component?: string
+  perms?: string
+  icon?: string
+  sortOrder?: number
+  visible?: number
+  status?: number
+  createTime?: string
+  remark?: string
+  children?: SysMenuVO[]
+}
+
+export interface SysMenuQueryDTO {
+  menuName?: string
+  status?: number
+}
+
+export interface SysMenuCreateDTO {
+  parentId?: string
+  menuName: string
+  menuType: number
+  path?: string
+  component?: string
+  perms?: string
+  icon?: string
+  sortOrder?: number
+  visible?: number
+  status?: number
+  remark?: string
+}
+
+export interface SysMenuUpdateDTO {
+  menuId: string
+  parentId?: string
+  menuName: string
+  menuType: number
+  path?: string
+  component?: string
+  perms?: string
+  icon?: string
+  sortOrder?: number
+  visible?: number
+  status?: number
+  remark?: string
+}
+
 /* ========== 系统用户 ========== */
 
 export interface SysUserVO {
-  userId: number
+  userId: string
   username: string
   nickname: string
   avatar?: string
@@ -40,6 +128,8 @@ export interface SysUserVO {
   status: number
   createTime?: string
   remark?: string
+  roleNames?: string
+  roleIds?: string[]
 }
 
 export interface SysUserQueryDTO {
@@ -47,14 +137,39 @@ export interface SysUserQueryDTO {
   nickname?: string
   phone?: string
   status?: number
+  roleId?: string
+  keyword?: string
   pageNum: number
   pageSize: number
+}
+
+export interface SysUserCreateDTO {
+  username: string
+  password: string
+  nickname: string
+  avatar?: string
+  email?: string
+  phone?: string
+  status?: number
+  remark?: string
+  roleIds?: string[]
+}
+
+export interface SysUserUpdateDTO {
+  userId: string
+  nickname?: string
+  avatar?: string
+  email?: string
+  phone?: string
+  status?: number
+  remark?: string
+  roleIds?: string[]
 }
 
 /* ========== 分类管理 ========== */
 
 export interface TocCategoryTreeVO {
-  categoryId: number
+  categoryId: string
   name: string
   sortOrder: number
   createTime?: string
@@ -62,8 +177,8 @@ export interface TocCategoryTreeVO {
 }
 
 export interface TocSubCategoryItemVO {
-  categoryId: number
-  parentId: number
+  categoryId: string
+  parentId: string
   name: string
   image?: string
   sortOrder: number
@@ -76,21 +191,21 @@ export interface TocParentCategoryCreateDTO {
 }
 
 export interface TocParentCategoryUpdateDTO {
-  categoryId: number
+  categoryId: string
   name: string
   sortOrder?: number
 }
 
 export interface TocSubCategoryCreateDTO {
-  parentId: number
+  parentId: string
   name: string
   image: string
   sortOrder?: number
 }
 
 export interface TocSubCategoryUpdateDTO {
-  categoryId: number
-  parentId: number
+  categoryId: string
+  parentId: string
   name: string
   image: string
   sortOrder?: number
@@ -99,11 +214,11 @@ export interface TocSubCategoryUpdateDTO {
 /* ========== 菜谱管理 ========== */
 
 export interface TocRecipeVO {
-  recipeId: number
+  recipeId: string
   title: string
   description?: string
   image?: string
-  categoryId?: number
+  categoryId?: string
   likes?: number
   difficulty?: string
   time?: string
@@ -122,7 +237,7 @@ export interface IngredientVO {
 }
 
 export interface StepVO {
-  id: number
+  id: string
   description: string
   image?: string
   ingredientsUsed?: string[]
@@ -142,7 +257,7 @@ export interface StepItem {
 }
 
 export interface TocRecipeQueryDTO {
-  categoryId?: number
+  categoryId?: string
   keyword?: string
   pageNum: number
   pageSize: number
@@ -152,7 +267,7 @@ export interface TocRecipeCreateDTO {
   title: string
   description: string
   image: string
-  categoryId: number
+  categoryId: string
   difficulty: string
   time: string
   servings?: number
@@ -162,7 +277,7 @@ export interface TocRecipeCreateDTO {
 }
 
 export interface TocRecipeUpdateDTO extends TocRecipeCreateDTO {
-  recipeId: number
+  recipeId: string
 }
 
 export interface TocRecipeRecommendDTO {
@@ -172,7 +287,7 @@ export interface TocRecipeRecommendDTO {
 /* ========== C端用户管理 ========== */
 
 export interface TocUserVO {
-  userId: number
+  userId: string
   username: string
   nickname?: string
   avatar?: string
@@ -195,9 +310,9 @@ export interface TocUserStatusDTO {
 /* ========== 评论管理 ========== */
 
 export interface TocCommentVO {
-  commentId: number
-  recipeId: number
-  userId: number
+  commentId: string
+  recipeId: string
+  userId: string
   username: string
   avatar?: string
   text: string
@@ -206,8 +321,8 @@ export interface TocCommentVO {
 }
 
 export interface TocCommentQueryDTO {
-  recipeId?: number
-  userId?: number
+  recipeId?: string
+  userId?: string
   text?: string
   pageNum: number
   pageSize: number
@@ -216,7 +331,7 @@ export interface TocCommentQueryDTO {
 /* ========== 轮播图管理 ========== */
 
 export interface TocBannerVO {
-  bannerId: number
+  bannerId: string
   title: string
   subtitle?: string
   image: string
@@ -244,15 +359,161 @@ export interface TocBannerCreateDTO {
 }
 
 export interface TocBannerUpdateDTO extends TocBannerCreateDTO {
-  bannerId: number
+  bannerId: string
+}
+
+/* ========== 操作日志 ========== */
+
+export interface SysOperLogVO {
+  operId: number
+  title: string
+  businessType: number
+  method: string
+  requestMethod: string
+  operName: string
+  operUrl: string
+  operIp: string
+  status: number
+  errorMsg?: string
+  operTime: string
+  costTime: number
+}
+
+export interface SysOperLogQueryDTO {
+  title?: string
+  businessType?: number
+  operName?: string
+  status?: number
+  pageNum: number
+  pageSize: number
 }
 
 /* ========== 文件上传 ========== */
 
 export interface UploadVO {
-  fileId: number
+  fileId: string
   url: string
   originalName: string
   storedName: string
   size: number
+}
+
+/* ========== 字典类型 ========== */
+
+export interface SysDictTypeVO {
+  dictId: string
+  dictName: string
+  dictType: string
+  status: number
+  createTime?: string
+  remark?: string
+}
+
+export interface SysDictTypeQueryDTO {
+  dictName?: string
+  dictType?: string
+  status?: number
+  pageNum: number
+  pageSize: number
+}
+
+export interface SysDictTypeCreateDTO {
+  dictName: string
+  dictType: string
+  status?: number
+  remark?: string
+}
+
+export interface SysDictTypeUpdateDTO {
+  dictId: string
+  dictName: string
+  dictType: string
+  status?: number
+  remark?: string
+}
+
+/* ========== 字典数据 ========== */
+
+export interface SysDictDataVO {
+  dictCode: string
+  dictSort?: number
+  dictLabel: string
+  dictValue: string
+  dictType: string
+  cssClass?: string
+  listClass?: string
+  isDefault?: number
+  status: number
+  createTime?: string
+  remark?: string
+}
+
+export interface SysDictDataQueryDTO {
+  dictType?: string
+  dictLabel?: string
+  status?: number
+  pageNum: number
+  pageSize: number
+}
+
+export interface SysDictDataCreateDTO {
+  dictSort?: number
+  dictLabel: string
+  dictValue: string
+  dictType: string
+  cssClass?: string
+  listClass?: string
+  isDefault?: number
+  status?: number
+  remark?: string
+}
+
+export interface SysDictDataUpdateDTO {
+  dictCode: string
+  dictSort?: number
+  dictLabel: string
+  dictValue: string
+  dictType: string
+  cssClass?: string
+  listClass?: string
+  isDefault?: number
+  status?: number
+  remark?: string
+}
+
+/* ========== 参数配置 ========== */
+
+export interface SysConfigVO {
+  configId: number
+  configName: string
+  configKey: string
+  configValue?: string
+  configType: number
+  createTime?: string
+  remark?: string
+}
+
+export interface SysConfigQueryDTO {
+  configName?: string
+  configKey?: string
+  configType?: number
+  pageNum: number
+  pageSize: number
+}
+
+export interface SysConfigCreateDTO {
+  configName: string
+  configKey: string
+  configValue?: string
+  configType?: number
+  remark?: string
+}
+
+export interface SysConfigUpdateDTO {
+  configId: number
+  configName: string
+  configKey: string
+  configValue?: string
+  configType?: number
+  remark?: string
 }

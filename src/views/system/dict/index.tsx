@@ -1,74 +1,209 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Table, Space, Tag, App } from 'antd'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router'
+import { Button, Input, Select, Table, Form, Card, App, Modal } from 'antd'
+import { Search, Plus } from 'lucide-react'
 import PageContainer from '@/components/PageContainer'
-import { getDictPage, deleteDict } from '@/api/system/dict'
-import type { SysDictVO } from '@/api/system/dict'
+import SearchArea from '@/components/SearchArea'
+import { getDictTypeDetail } from '@/api/system/dict'
+import { useDictTypePageQuery, useDictTypeMutations } from './hooks'
+import { getDictTypeColumns } from './columns'
+import DictTypeModal, { type DictTypeFormValues } from './DictTypeModal'
+import type { SysDictTypeVO, SysDictTypeQueryDTO, SysDictTypeCreateDTO, SysDictTypeUpdateDTO } from '@/types'
 
-export default function SystemDictPage() {
-  const queryClient = useQueryClient()
-  const { message, modal } = App.useApp()
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 })
+export default function SystemDictTypePage() {
+  const { message } = App.useApp()
+  const navigate = useNavigate()
+  const [searchForm] = Form.useForm()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['dict', 'page', pagination],
-    queryFn: () => getDictPage({ pageNum: pagination.current, pageSize: pagination.pageSize }),
-  })
+  const { data, isLoading, pagination, setPagination, setSearchParams, refreshList } = useDictTypePageQuery()
+  const { deleteMut, updateMut, createMut } = useDictTypeMutations()
 
-  const deleteMut = useMutation({ mutationFn: deleteDict })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [isEdit, setIsEdit] = useState(false)
+  const [editingDictId, setEditingDictId] = useState<string | null>(null)
+  const [modalInitialValues, setModalInitialValues] = useState<DictTypeFormValues>({})
+  const [modalLoading, setModalLoading] = useState(false)
 
-  const refreshList = () => {
-    queryClient.invalidateQueries({ queryKey: ['dict', 'page'] })
+  const handleSearch = () => {
+    const values = searchForm.getFieldsValue()
+    const params: Partial<SysDictTypeQueryDTO> = {}
+    if (values.status !== undefined && values.status !== '') params.status = Number(values.status)
+    if (values.dictName) params.dictName = values.dictName
+    if (values.dictType) params.dictType = values.dictType
+    setSearchParams(params)
+    setPagination((prev) => ({ ...prev, current: 1 }))
   }
 
-  const handleDelete = useCallback((dictId: number) => {
-    modal.confirm({
-      title: '确认删除',
-      content: '确认删除该字典？',
-      onOk: async () => {
-        await deleteMut.mutateAsync(dictId)
-        message.success('删除成功')
-        refreshList()
-      },
-    })
-  }, [modal, deleteMut, message, refreshList])
+  const handleReset = () => {
+    searchForm.resetFields()
+    setSearchParams({})
+    setPagination((prev) => ({ ...prev, current: 1 }))
+  }
 
-  const columns = useMemo(() => [
-    { title: '字典名称', dataIndex: 'name' },
-    { title: '字典编码', dataIndex: 'code', render: (code: string) => <Tag>{code}</Tag> },
-    { title: '字典项', dataIndex: 'items' },
-    { title: '创建时间', dataIndex: 'createTime', render: (t: string) => t || '-' },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: SysDictVO) => (
-        <Space>
-          <Button type="link" icon={<Edit size={14} />}>编辑</Button>
-          <Button type="link" danger icon={<Trash2 size={14} />} onClick={() => handleDelete(record.dictId)}>删除</Button>
-        </Space>
-      ),
+  const handleDelete = useCallback(
+    (dictId: string) => {
+      Modal.confirm({
+        title: '确认删除',
+        content: '删除后该字典类型将无法恢复，是否确认删除？',
+        okText: '确认删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await deleteMut.mutateAsync(dictId)
+            message.success('删除成功')
+            await refreshList()
+          } catch {
+            // 错误已在 request.ts 拦截器中提示
+          }
+        },
+      })
     },
-  ], [handleDelete])
+    [deleteMut, message, refreshList],
+  )
+
+  const openEdit = useCallback(
+    async (record: SysDictTypeVO) => {
+      setIsEdit(true)
+      setEditingDictId(record.dictId)
+      setModalOpen(true)
+      setModalLoading(true)
+      try {
+        const detail = await getDictTypeDetail(record.dictId)
+        setModalInitialValues({
+          dictName: detail.dictName,
+          dictType: detail.dictType,
+          status: detail.status,
+          remark: detail.remark,
+        })
+      } catch {
+        message.warning('详情加载失败，已使用列表数据回显')
+        setModalInitialValues({
+          dictName: record.dictName,
+          dictType: record.dictType,
+          status: record.status,
+          remark: record.remark,
+        })
+      } finally {
+        setModalLoading(false)
+      }
+    },
+    [message],
+  )
+
+  const openCreate = () => {
+    setIsEdit(false)
+    setEditingDictId(null)
+    setModalInitialValues({ status: 1 })
+    setModalOpen(true)
+  }
+
+  const handleModalOk = async (values: DictTypeFormValues) => {
+    try {
+      if (isEdit && editingDictId) {
+        const payload: SysDictTypeUpdateDTO = {
+          dictId: editingDictId,
+          dictName: values.dictName!,
+          dictType: values.dictType!,
+          status: values.status,
+          remark: values.remark,
+        }
+        await updateMut.mutateAsync(payload)
+        message.success('更新成功')
+      } else {
+        const payload: SysDictTypeCreateDTO = {
+          dictName: values.dictName!,
+          dictType: values.dictType!,
+          status: values.status,
+          remark: values.remark,
+        }
+        await createMut.mutateAsync(payload)
+        message.success('新增成功')
+      }
+      setModalOpen(false)
+      await refreshList()
+    } catch {
+      // 错误已在 request.ts 拦截器中提示
+    }
+  }
+
+  const handleViewData = useCallback(
+    (record: SysDictTypeVO) => {
+      navigate(`/system/dict-data?dictType=${encodeURIComponent(record.dictType)}`)
+    },
+    [navigate],
+  )
+
+  const columns = useMemo(
+    () => getDictTypeColumns({ onEdit: openEdit, onDelete: handleDelete, onViewData: handleViewData }),
+    [openEdit, handleDelete, handleViewData],
+  )
 
   return (
     <PageContainer>
-      <div className="flex justify-end mb-4">
-        <Button type="primary" icon={<Plus size={14} />}>新增字典</Button>
+      <Card className="mb-5 rounded-xl shadow-sm border-slate-100 overflow-hidden">
+        <SearchArea
+          form={searchForm}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          loading={isLoading}
+          defaultVisibleCount={3}
+        >
+          <Form.Item name="status" label="字典状态">
+            <Select
+              placeholder="全部"
+              className="w-full"
+              allowClear
+              options={[
+                { label: '正常', value: 1 },
+                { label: '停用', value: 0 },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="dictName" label="字典名称">
+            <Input placeholder="请输入字典名称" prefix={<Search size={14} />} allowClear />
+          </Form.Item>
+          <Form.Item name="dictType" label="字典类型">
+            <Input placeholder="请输入字典类型" prefix={<Search size={14} />} allowClear />
+          </Form.Item>
+        </SearchArea>
+      </Card>
+
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-50">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 bg-blue-500 rounded-full" />
+            <span className="text-base font-semibold text-slate-800">字典类型列表</span>
+          </div>
+          <Button type="primary" icon={<Plus size={14} />} onClick={openCreate} className="rounded-lg h-9 px-4 shadow-sm">
+            新增字典类型
+          </Button>
+        </div>
+        <div className="p-6">
+          <Table
+            columns={columns}
+            dataSource={data?.records || []}
+            rowKey="dictId"
+            loading={isLoading}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: data?.total || 0,
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 条记录`,
+              onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
+            }}
+          />
+        </div>
       </div>
-      <Table
-        columns={columns}
-        dataSource={data?.records || []}
-        rowKey="dictId"
-        loading={isLoading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: data?.total || 0,
-          showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 条记录`,
-          onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
-        }}
+
+      <DictTypeModal
+        open={modalOpen}
+        isEdit={isEdit}
+        initialValues={modalInitialValues}
+        confirmLoading={updateMut.isPending || createMut.isPending || modalLoading}
+        onOk={handleModalOk}
+        onCancel={() => setModalOpen(false)}
       />
     </PageContainer>
   )

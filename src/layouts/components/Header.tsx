@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { useLocation } from 'react-router'
-import { Layout, Breadcrumb, Input, Badge } from 'antd'
+import { Layout, Breadcrumb, Input, Badge, Spin } from 'antd'
 import { Search, Bell } from 'lucide-react'
-import { menuConfig } from '@/config/menu'
+import { useQuery } from '@tanstack/react-query'
+import { getUserMenuTree } from '@/api/system/menu'
+import { transformMenuData } from '@/config/menu'
 import type { MenuConfig } from '@/config/menu'
 
 const { Header: AntHeader } = Layout
@@ -25,16 +27,26 @@ function findMenuPath(items: MenuConfig[], path: string): MenuConfig[] {
 export default function Header() {
   const location = useLocation()
 
+  const { data: menuTree } = useQuery({
+    queryKey: ['sys-menu', 'user-tree'],
+    queryFn: getUserMenuTree,
+  })
+
+  const menuData = useMemo(() => {
+    if (!menuTree) return []
+    return transformMenuData(menuTree)
+  }, [menuTree])
+
   const breadcrumbItems = useMemo(() => {
-    const path = findMenuPath(menuConfig, location.pathname)
+    const path = findMenuPath(menuData, location.pathname)
     return path.map((item) => ({
       title: item.label,
     }))
-  }, [location.pathname])
+  }, [location.pathname, menuData])
 
   return (
     <AntHeader className="!bg-white !px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm h-16">
-      <Breadcrumb items={breadcrumbItems} />
+      {menuData.length === 0 ? <Spin size="small" /> : <Breadcrumb items={breadcrumbItems} />}
 
       <div className="flex items-center gap-4">
         <Input

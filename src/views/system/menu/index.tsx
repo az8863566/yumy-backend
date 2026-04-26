@@ -1,78 +1,214 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Table, Space, Tag, Card, App } from 'antd'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Button, Input, Select, Table, Form, Card, App, Modal } from 'antd'
+import { Search, Plus } from 'lucide-react'
 import PageContainer from '@/components/PageContainer'
-import { getMenuTree, deleteMenu } from '@/api/system/menu'
-import type { SysMenuVO } from '@/api/system/menu'
+import SearchArea from '@/components/SearchArea'
+import { getMenuDetail } from '@/api/system/menu'
+import { useMenuTreeQuery, useMenuMutations } from './hooks'
+import { getMenuColumns } from './columns'
+import MenuModal, { type MenuFormValues } from './MenuModal'
+import type { SysMenuVO, SysMenuQueryDTO, SysMenuCreateDTO, SysMenuUpdateDTO } from '@/types'
 
 export default function SystemMenuPage() {
-  const queryClient = useQueryClient()
-  const { message, modal } = App.useApp()
-  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([])
+  const { message } = App.useApp()
+  const [searchForm] = Form.useForm()
 
-  const { data: treeData = [], isLoading } = useQuery({
-    queryKey: ['menu', 'tree'],
-    queryFn: getMenuTree,
-  })
+  const { data, isLoading, setSearchParams, refreshList } = useMenuTreeQuery()
+  const { deleteMut, updateMut, createMut } = useMenuMutations()
 
-  const deleteMut = useMutation({ mutationFn: deleteMenu })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [isEdit, setIsEdit] = useState(false)
+  const [editingMenuId, setEditingMenuId] = useState<string | null>(null)
+  const [modalInitialValues, setModalInitialValues] = useState<MenuFormValues>({})
+  const [modalLoading, setModalLoading] = useState(false)
 
-  const refreshList = () => {
-    queryClient.invalidateQueries({ queryKey: ['menu', 'tree'] })
+  const handleSearch = () => {
+    const values = searchForm.getFieldsValue()
+    const params: Partial<SysMenuQueryDTO> = {}
+    if (values.menuName) params.menuName = values.menuName
+    if (values.status !== undefined && values.status !== '') params.status = Number(values.status)
+    setSearchParams(params)
   }
 
-  const handleDelete = useCallback((menuId: number) => {
-    modal.confirm({
-      title: '确认删除',
-      content: '确认删除该菜单？',
-      onOk: async () => {
-        await deleteMut.mutateAsync(menuId)
-        message.success('删除成功')
-        refreshList()
-      },
-    })
-  }, [modal, deleteMut, message, refreshList])
+  const handleReset = () => {
+    searchForm.resetFields()
+    setSearchParams({})
+  }
 
-  const columns = useMemo(() => [
-    { title: '菜单名称', dataIndex: 'name', key: 'name' },
-    { title: '图标配置', dataIndex: 'icon', key: 'icon', render: (icon: string) => <Tag>{icon || '-'}</Tag> },
-    { title: '路由路径', dataIndex: 'path', key: 'path', render: (p: string) => p || '-' },
-    { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: SysMenuVO) => (
-        <Space>
-          <Button type="link" icon={<Edit size={14} />}>编辑</Button>
-          <Button type="link" danger icon={<Trash2 size={14} />} onClick={() => handleDelete(record.menuId)}>删除</Button>
-        </Space>
-      ),
+  const handleDelete = useCallback(
+    (menuId: string) => {
+      Modal.confirm({
+        title: '确认删除',
+        content: '删除后该菜单数据将无法恢复，是否确认删除？',
+        okText: '确认删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await deleteMut.mutateAsync(menuId)
+            message.success('删除成功')
+            await refreshList()
+          } catch {
+            // 错误已在 request.ts 拦截器中提示
+          }
+        },
+      })
     },
-  ], [handleDelete])
+    [deleteMut, message, refreshList],
+  )
+
+  const openEdit = useCallback(
+    async (record: SysMenuVO) => {
+      setIsEdit(true)
+      setEditingMenuId(record.menuId)
+      setModalOpen(true)
+      setModalLoading(true)
+      try {
+        const detail = await getMenuDetail(record.menuId)
+        setModalInitialValues({
+          parentId: detail.parentId,
+          menuName: detail.menuName,
+          menuType: detail.menuType,
+          path: detail.path,
+          component: detail.component,
+          perms: detail.perms,
+          icon: detail.icon,
+          sortOrder: detail.sortOrder,
+          visible: detail.visible,
+          status: detail.status,
+          remark: detail.remark,
+        })
+      } catch {
+        message.warning('详情加载失败，已使用列表数据回显')
+        setModalInitialValues({
+          parentId: record.parentId,
+          menuName: record.menuName,
+          menuType: record.menuType,
+          path: record.path,
+          component: record.component,
+          perms: record.perms,
+          icon: record.icon,
+          sortOrder: record.sortOrder,
+          visible: record.visible,
+          status: record.status,
+          remark: record.remark,
+        })
+      } finally {
+        setModalLoading(false)
+      }
+    },
+    [message],
+  )
+
+  const openCreate = () => {
+    setIsEdit(false)
+    setEditingMenuId(null)
+    setModalInitialValues({ status: 1, visible: 1, menuType: 2 })
+    setModalOpen(true)
+  }
+
+  const handleModalOk = async (values: MenuFormValues) => {
+    try {
+      if (isEdit && editingMenuId) {
+        const payload: SysMenuUpdateDTO = {
+          menuId: editingMenuId,
+          parentId: values.parentId,
+          menuName: values.menuName!,
+          menuType: values.menuType!,
+          path: values.path,
+          component: values.component,
+          perms: values.perms,
+          icon: values.icon,
+          sortOrder: values.sortOrder,
+          visible: values.visible,
+          status: values.status,
+          remark: values.remark,
+        }
+        await updateMut.mutateAsync(payload)
+        message.success('更新成功')
+      } else {
+        const payload: SysMenuCreateDTO = {
+          parentId: values.parentId,
+          menuName: values.menuName!,
+          menuType: values.menuType!,
+          path: values.path,
+          component: values.component,
+          perms: values.perms,
+          icon: values.icon,
+          sortOrder: values.sortOrder,
+          visible: values.visible,
+          status: values.status,
+          remark: values.remark,
+        }
+        await createMut.mutateAsync(payload)
+        message.success('新增成功')
+      }
+      setModalOpen(false)
+      await refreshList()
+    } catch {
+      // 错误已在 request.ts 拦截器中提示
+    }
+  }
+
+  const columns = useMemo(() => getMenuColumns({ onEdit: openEdit, onDelete: handleDelete }), [openEdit, handleDelete])
 
   return (
     <PageContainer>
-      <Card className="mb-4">
-        <div className="text-gray-500 text-sm">
-          <div className="text-gray-400 mb-1">视图类型</div>
-          <div>树形列表</div>
-        </div>
+      <Card className="mb-5 rounded-xl shadow-sm border-slate-100 overflow-hidden">
+        <SearchArea
+          form={searchForm}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          loading={isLoading}
+          defaultVisibleCount={3}
+        >
+          <Form.Item name="menuName" label="菜单名称">
+            <Input placeholder="请输入菜单名称" prefix={<Search size={14} />} allowClear />
+          </Form.Item>
+          <Form.Item name="status" label="菜单状态">
+            <Select
+              placeholder="全部"
+              className="w-full"
+              allowClear
+              options={[
+                { label: '正常', value: 1 },
+                { label: '停用', value: 0 },
+              ]}
+            />
+          </Form.Item>
+        </SearchArea>
       </Card>
-      <div className="flex justify-end mb-4">
-        <Button type="primary" icon={<Plus size={14} />}>新建菜单</Button>
+
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-50">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 bg-blue-500 rounded-full" />
+            <span className="text-base font-semibold text-slate-800">菜单列表</span>
+          </div>
+          <Button type="primary" icon={<Plus size={14} />} onClick={openCreate} className="rounded-lg h-9 px-4 shadow-sm">
+            新增菜单
+          </Button>
+        </div>
+        <div className="p-6">
+          <Table
+            columns={columns}
+            dataSource={data || []}
+            rowKey="menuId"
+            loading={isLoading}
+            pagination={false}
+            defaultExpandAllRows
+          />
+        </div>
       </div>
-      <Table
-        columns={columns}
-        dataSource={treeData}
-        rowKey="menuId"
-        loading={isLoading}
-        expandable={{
-          expandedRowKeys,
-          onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
-        }}
-        defaultExpandAllRows
-        pagination={false}
+
+      <MenuModal
+        open={modalOpen}
+        isEdit={isEdit}
+        initialValues={modalInitialValues}
+        confirmLoading={updateMut.isPending || createMut.isPending || modalLoading}
+        treeData={data || []}
+        onOk={handleModalOk}
+        onCancel={() => setModalOpen(false)}
       />
     </PageContainer>
   )

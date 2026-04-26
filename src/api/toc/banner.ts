@@ -11,7 +11,7 @@ export function getBannerPage(params: TocBannerQueryDTO) {
   return get<PageResult<TocBannerVO>>('/admin/v1/banner/page', params)
 }
 
-export function getBannerDetail(bannerId: number) {
+export function getBannerDetail(bannerId: string) {
   return get<TocBannerVO>(`/admin/v1/banner/${bannerId}`)
 }
 
@@ -23,6 +23,6 @@ export function updateBanner(data: TocBannerUpdateDTO) {
   return put<void>('/admin/v1/banner', data)
 }
 
-export function deleteBanner(bannerId: number) {
+export function deleteBanner(bannerId: string) {
   return del<void>(`/admin/v1/banner/${bannerId}`)
 }

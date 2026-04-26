@@ -1,26 +1,24 @@
 import { get, post, put, del } from '../request'
-import type { PageResult } from '@/types'
+import type { PageResult, SysRoleVO, SysRoleQueryDTO, SysRoleCreateDTO, SysRoleUpdateDTO } from '@/types'
 
-export interface SysRoleVO {
-  roleId: number
-  name: string
-  code: string
-  status: number
-  createTime?: string
-}
+export type { SysRoleVO }
 
-export function getRolePage(params: { pageNum: number; pageSize: number }) {
+export function getRolePage(params: SysRoleQueryDTO) {
   return get<PageResult<SysRoleVO>>('/admin/v1/role/page', params)
 }
 
-export function createRole(data: unknown) {
+export function getRoleDetail(roleId: string) {
+  return get<SysRoleVO>(`/admin/v1/role/${roleId}`)
+}
+
+export function createRole(data: SysRoleCreateDTO) {
   return post<void>('/admin/v1/role', data)
 }
 
-export function updateRole(data: unknown) {
+export function updateRole(data: SysRoleUpdateDTO) {
   return put<void>('/admin/v1/role', data)
 }
 
-export function deleteRole(roleId: number) {
+export function deleteRole(roleId: string) {
   return del<void>(`/admin/v1/role/${roleId}`)
 }

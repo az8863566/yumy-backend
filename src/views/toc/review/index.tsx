@@ -32,13 +32,13 @@ export default function TocReviewPage() {
     queryClient.invalidateQueries({ queryKey: ['comment', 'page'] })
   }
 
-  const handleViewDetail = useCallback(async (commentId: number) => {
+  const handleViewDetail = useCallback(async (commentId: string) => {
     const detail = await getCommentDetail(commentId)
     setDetailRecord(detail)
     setDetailOpen(true)
   }, [])
 
-  const handleDelete = useCallback((commentId: number) => {
+  const handleDelete = useCallback((commentId: string) => {
     modal.confirm({
       title: '确认删除',
       content: '确认删除该评论？此操作不可恢复。',
@@ -76,7 +76,7 @@ export default function TocReviewPage() {
       title: '关联菜谱ID',
       dataIndex: 'recipeId',
       width: 100,
-      render: (id: number) => <Tag>{id}</Tag>,
+      render: (id: string) => <Tag>{id}</Tag>,
     },
     {
       title: '评论时间',

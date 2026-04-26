@@ -1,19 +1,8 @@
-import { get, del } from '../request'
-import type { PageResult } from '@/types'
+import { get } from '../request'
+import type { PageResult, SysOperLogVO, SysOperLogQueryDTO } from '@/types'
 
-export interface SysLogVO {
-  logId: number
-  action: string
-  operator: string
-  ip: string
-  status: string
-  time: string
-}
+export type { SysOperLogVO }
 
-export function getLogPage(params: { pageNum: number; pageSize: number }) {
-  return get<PageResult<SysLogVO>>('/admin/v1/oper-log/page', params)
-}
-
-export function deleteLog(logId: number) {
-  return del<void>(`/admin/v1/oper-log/${logId}`)
+export function getOperLogPage(params: SysOperLogQueryDTO) {
+  return get<PageResult<SysOperLogVO>>('/admin/v1/oper-log/page', params)
 }

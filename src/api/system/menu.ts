@@ -1,27 +1,28 @@
 import { get, post, put, del } from '../request'
+import type { SysMenuVO, SysMenuQueryDTO, SysMenuCreateDTO, SysMenuUpdateDTO } from '@/types'
 
-export interface SysMenuVO {
-  menuId: number
-  name: string
-  icon?: string
-  path: string
-  sort: number
-  parentId?: number
-  children?: SysMenuVO[]
+export type { SysMenuVO }
+
+export function getMenuTree(params: SysMenuQueryDTO) {
+  return get<SysMenuVO[]>('/admin/v1/menu/tree', params)
 }
 
-export function getMenuTree() {
+export function getUserMenuTree() {
   return get<SysMenuVO[]>('/admin/v1/menu/tree')
 }
 
-export function createMenu(data: unknown) {
+export function getMenuDetail(menuId: string) {
+  return get<SysMenuVO>(`/admin/v1/menu/${menuId}`)
+}
+
+export function createMenu(data: SysMenuCreateDTO) {
   return post<void>('/admin/v1/menu', data)
 }
 
-export function updateMenu(data: unknown) {
+export function updateMenu(data: SysMenuUpdateDTO) {
   return put<void>('/admin/v1/menu', data)
 }
 
-export function deleteMenu(menuId: number) {
+export function deleteMenu(menuId: string) {
   return del<void>(`/admin/v1/menu/${menuId}`)
 }

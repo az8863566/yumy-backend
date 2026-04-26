@@ -7,25 +7,23 @@ import type { AuthLoginDTO } from '@/types'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setUserInfo, setPermissions } = useUserStore()
+  const { setToken, setUserInfo } = useUserStore()
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (values: AuthLoginDTO) => {
     setLoading(true)
     try {
       const data = await login(values)
-
-      // Session 模式：浏览器自动通过 Cookie 维持会话，无需管理 Token
-      setUserInfo({
-        username: data.username,
-        nickname: data.nickname,
-        permissions: data.permissions,
-      })
-      setPermissions(data.permissions || [])
+      setToken(data.token)
+      setUserInfo(data)
       message.success('登录成功')
       navigate('/')
-    } catch {
-      message.error('登录失败，请检查用户名和密码')
+    } catch (error: unknown) {
+      let msg = '登录失败，请检查用户名和密码'
+      if (error instanceof Error) {
+        msg = error.message || msg
+      }
+      message.error(msg)
     } finally {
       setLoading(false)
     }

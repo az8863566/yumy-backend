@@ -50,7 +50,7 @@ export default function TocCarouselPage() {
     refreshList()
   }
 
-  const handleDelete = useCallback((bannerId: number) => {
+  const handleDelete = useCallback((bannerId: string) => {
     modal.confirm({
       title: '确认删除',
       content: '确认删除该轮播图？',

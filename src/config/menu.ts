@@ -1,3 +1,5 @@
+import type { SysMenuVO } from '@/types'
+
 export interface MenuConfig {
   key: string
   label: string
@@ -5,6 +7,19 @@ export interface MenuConfig {
   path?: string
   children?: MenuConfig[]
   permission?: string
+}
+
+export function transformMenuData(menus: SysMenuVO[]): MenuConfig[] {
+  return menus
+    .filter((m) => m.menuType !== 3 && m.visible === 1 && m.status === 1)
+    .map((m) => ({
+      key: String(m.menuId),
+      label: m.menuName,
+      icon: m.icon,
+      path: m.path,
+      permission: m.perms,
+      children: m.children && m.children.length > 0 ? transformMenuData(m.children) : undefined,
+    }))
 }
 
 export const menuConfig: MenuConfig[] = [
@@ -17,7 +32,8 @@ export const menuConfig: MenuConfig[] = [
       { key: 'system-role', label: '角色管理', path: '/system/role', icon: 'ShieldCheck', permission: 'system:role:view' },
       { key: 'system-menu', label: '菜单管理', path: '/system/menu', icon: 'Menu', permission: 'system:menu:view' },
       { key: 'system-log', label: '操作日志', path: '/system/log', icon: 'FileText', permission: 'system:log:view' },
-      { key: 'system-dict', label: '数据字典', path: '/system/dict', icon: 'BookOpen', permission: 'system:dict:view' },
+      { key: 'system-dict', label: '字典类型', path: '/system/dict', icon: 'BookOpen', permission: 'system:dict:view' },
+      { key: 'system-dict-data', label: '字典数据', path: '/system/dict-data', icon: 'BookOpen', permission: 'system:dict:data:view' },
       { key: 'system-config', label: '系统配置', path: '/system/config', icon: 'SlidersHorizontal', permission: 'system:config:view' },
     ],
   },

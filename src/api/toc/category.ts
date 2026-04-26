@@ -19,7 +19,7 @@ export function updateParentCategory(data: TocParentCategoryUpdateDTO) {
   return put<void>('/admin/v1/category/parent', data)
 }
 
-export function deleteParentCategory(categoryId: number) {
+export function deleteParentCategory(categoryId: string) {
   return del<void>(`/admin/v1/category/parent/${categoryId}`)
 }
 
@@ -31,6 +31,6 @@ export function updateSubCategory(data: TocSubCategoryUpdateDTO) {
   return put<void>('/admin/v1/category/sub', data)
 }
 
-export function deleteSubCategory(categoryId: number) {
+export function deleteSubCategory(categoryId: string) {
   return del<void>(`/admin/v1/category/sub/${categoryId}`)
 }
